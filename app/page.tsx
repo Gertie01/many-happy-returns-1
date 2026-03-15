@@ -3,7 +3,7 @@
 import React, { useState, useCallback } from 'react';
 import { Upload, Send, Loader2, Image as ImageIcon, Sparkles, RefreshCcw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { cn } from './lib/utils';
+import { cn } from '../lib/utils';
 
 interface Message {
   id: string;
