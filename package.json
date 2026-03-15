@@ -22,7 +22,7 @@
     "typescript": "latest",
     "@types/node": "latest",
     "@types/react": "latest",
-    "@types/react-dom": "latest,
+    "@types/react-dom": "latest",
     "postcss": "latest",
     "tailwindcss": "latest",
     "autoprefixer": "latest"
