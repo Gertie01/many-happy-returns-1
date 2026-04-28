@@ -5,36 +5,92 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gemini 2.0 Flash | Image Studio</title>
     <script src="https://cdn.tailwindcss.com"></script>
+
     <style>
         #drop-zone.dragover { border: 4px dashed #3b82f6; background: #eff6ff; }
-        .image-container img { max-width: 100%; border-radius: 8px; }
+        img { max-width: 100%; border-radius: 8px; }
     </style>
 </head>
+
 <body class="bg-zinc-900 text-white min-h-screen flex flex-col">
     <header class="p-6 border-b border-zinc-800">
-        <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">Gemini 2.0 Flash Studio</h1>
+        <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-500 bg-clip-text text-transparent">
+            Gemini 2.0 Flash Studio
+        </h1>
     </header>
 
     <main class="flex-1 flex flex-col p-6 gap-6 overflow-hidden">
+
+        <!-- Chat / History -->
         <div id="chat-history" class="flex-1 overflow-y-auto space-y-4 p-4 bg-zinc-800/50 rounded-xl">
-            <div class="text-zinc-400 italic">Welcome. Upload an image to edit or type a prompt to generate something new.</div>
+            <div class="text-zinc-400 italic">
+                Welcome. Upload an image to edit or type a prompt to generate something new.
+            </div>
         </div>
 
-        <div id="drop-zone" class="border-2 border-dashed border-zinc-700 rounded-xl p-8 transition-all">
+        <!-- Image Upload -->
+        <div id="drop-zone" class="border-2 border-dashed border-zinc-700 rounded-xl p-8 transition-all cursor-pointer">
             <div id="preview-area" class="hidden mb-4 relative">
                 <img id="img-preview" src="" class="h-32 rounded shadow-lg">
                 <button onclick="clearImage()" class="absolute -top-2 -left-2 bg-red-500 rounded-full w-6 h-6 text-xs">X</button>
             </div>
+
             <div class="text-center">
                 <p>Drag and drop an image or click to select</p>
-                <input type="file" id="file-input" class="hidden" accept="image/*">
+                <input type="file" id="imageInput" class="hidden" accept="image/*">
             </div>
         </div>
 
+        <!-- Prompt + Buttons -->
         <div class="flex gap-2">
-            <input type="text" id="prompt-input" placeholder="Describe what you want..." class="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white">
-            <button id="send-btn" class="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-lg font-semibold transition-colors">Generate</button>
+            <input 
+                type="text" 
+                id="prompt" 
+                placeholder="Describe what you want..." 
+                class="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 text-white"
+            >
+
+            <button 
+                id="generateBtn" 
+                class="bg-blue-600 hover:bg-blue-700 px-8 py-3 rounded-lg font-semibold transition-colors"
+            >
+                Generate
+            </button>
         </div>
+
+        <!-- Edit Prompt -->
+        <div class="flex gap-2">
+            <input 
+                type="text" 
+                id="editPrompt" 
+                placeholder="Describe how to edit the uploaded image..." 
+                class="flex-1 bg-zinc-800 border border-zinc-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-purple-500 text-white"
+            >
+
+            <button 
+                id="editBtn" 
+                class="bg-purple-600 hover:bg-purple-700 px-8 py-3 rounded-lg font-semibold transition-colors"
+            >
+                Edit Image
+            </button>
+        </div>
+
+        <!-- Output Images -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+            <div>
+                <h3 class="text-lg font-semibold mb-2">Generated Image</h3>
+                <img id="resultImage" class="hidden shadow-lg rounded-lg">
+            </div>
+
+            <div>
+                <h3 class="text-lg font-semibold mb-2">Edited Image</h3>
+                <img id="editedImage" class="hidden shadow-lg rounded-lg">
+            </div>
+        </div>
+
+        <!-- Status -->
+        <div id="status" class="mt-4 text-sm text-zinc-300"></div>
+
     </main>
 
     <script src="app.js"></script>
