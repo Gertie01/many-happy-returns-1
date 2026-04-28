@@ -1,24 +1,24 @@
 // ------------------------------------------------------
-// ELEMENTS (must match your HTML exactly)
+// DOM ELEMENTS (matching your index.html exactly)
 // ------------------------------------------------------
-const generateBtn = document.querySelector("#generateBtn");
-const editBtn = document.querySelector("#editBtn");
+const generateBtn = document.getElementById("generateBtn");
+const editBtn = document.getElementById("editBtn");
 
-const promptInput = document.querySelector("#prompt");
-const editPromptInput = document.querySelector("#editPrompt");
-const imageInput = document.querySelector("#imageInput");
+const promptInput = document.getElementById("prompt");
+const editPromptInput = document.getElementById("editPrompt");
+const imageInput = document.getElementById("imageInput");
 
-const resultImage = document.querySelector("#resultImage");
-const editedImage = document.querySelector("#editedImage");
+const resultImage = document.getElementById("resultImage");
+const editedImage = document.getElementById("editedImage");
 
-const statusBox = document.querySelector("#status");
+const statusBox = document.getElementById("status");
 
 // ------------------------------------------------------
 // STATUS HANDLER
 // ------------------------------------------------------
-function setStatus(msg, error = false) {
-  statusBox.textContent = msg;
-  statusBox.style.color = error ? "red" : "white";
+function setStatus(message, isError = false) {
+  statusBox.textContent = message;
+  statusBox.style.color = isError ? "red" : "white";
 }
 
 // ------------------------------------------------------
@@ -41,8 +41,8 @@ async function generateImage() {
     });
 
     if (!response.ok) {
-      const err = await response.json();
-      setStatus("Error: " + err.error, true);
+      const err = await response.json().catch(() => ({}));
+      setStatus("Error: " + (err.error || "Unknown error"), true);
       return;
     }
 
@@ -87,8 +87,8 @@ async function editImage() {
     });
 
     if (!response.ok) {
-      const err = await response.json();
-      setStatus("Error: " + err.error, true);
+      const err = await response.json().catch(() => ({}));
+      setStatus("Error: " + (err.error || "Unknown error"), true);
       return;
     }
 
@@ -107,5 +107,5 @@ async function editImage() {
 // ------------------------------------------------------
 // EVENT LISTENERS
 // ------------------------------------------------------
-if (generateBtn) generateBtn.addEventListener("click", generateImage);
-if (editBtn) editBtn.addEventListener("click", editImage);
+generateBtn.addEventListener("click", generateImage);
+editBtn.addEventListener("click", editImage);
