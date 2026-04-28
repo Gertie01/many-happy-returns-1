@@ -1,24 +1,24 @@
 // ------------------------------------------------------
-// DOM ELEMENTS
+// ELEMENTS (must match your HTML exactly)
 // ------------------------------------------------------
-const generateBtn = document.getElementById("generateBtn");
-const editBtn = document.getElementById("editBtn");
+const generateBtn = document.querySelector("#generateBtn");
+const editBtn = document.querySelector("#editBtn");
 
-const promptInput = document.getElementById("prompt");
-const editPromptInput = document.getElementById("editPrompt");
-const imageInput = document.getElementById("imageInput");
+const promptInput = document.querySelector("#prompt");
+const editPromptInput = document.querySelector("#editPrompt");
+const imageInput = document.querySelector("#imageInput");
 
-const resultImage = document.getElementById("resultImage");
-const editedImage = document.getElementById("editedImage");
+const resultImage = document.querySelector("#resultImage");
+const editedImage = document.querySelector("#editedImage");
 
-const statusBox = document.getElementById("status");
+const statusBox = document.querySelector("#status");
 
 // ------------------------------------------------------
-// STATUS HANDLING
+// STATUS HANDLER
 // ------------------------------------------------------
-function setStatus(message, isError = false) {
-  statusBox.innerText = message;
-  statusBox.style.color = isError ? "red" : "white";
+function setStatus(msg, error = false) {
+  statusBox.textContent = msg;
+  statusBox.style.color = error ? "red" : "white";
 }
 
 // ------------------------------------------------------
@@ -107,5 +107,5 @@ async function editImage() {
 // ------------------------------------------------------
 // EVENT LISTENERS
 // ------------------------------------------------------
-generateBtn.addEventListener("click", generateImage);
-editBtn.addEventListener("click", editImage);
+if (generateBtn) generateBtn.addEventListener("click", generateImage);
+if (editBtn) editBtn.addEventListener("click", editImage);
