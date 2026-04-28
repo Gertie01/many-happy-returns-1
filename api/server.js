@@ -12,20 +12,18 @@ app.use(cors());
 app.use(express.json());
 
 const __dirname = path.resolve();
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "../public")));
 
 app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile(path.join(__dirname, "../public", "index.html"));
 });
 
 const upload = multer({ storage: multer.memoryStorage() });
 
 const GEMINI_API_KEY = process.env.GOOGLE_API_KEY;
-const GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent";
+const GEMINI_URL =
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent";
 
-// ----------------------------
-// IMAGE GENERATION
-// ----------------------------
 app.post("/generate-image", async (req, res) => {
   try {
     const { prompt } = req.body;
@@ -34,33 +32,19 @@ app.post("/generate-image", async (req, res) => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        contents: [
-          {
-            parts: [{ text: prompt }]
-          }
-        ],
-        generationConfig: {
-          responseMimeType: "image/png"
-        }
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { responseMimeType: "image/png" }
       })
     });
 
     const buffer = Buffer.from(await response.arrayBuffer());
-
     res.setHeader("Content-Type", "image/png");
     res.send(buffer);
-
   } catch (err) {
-    res.status(500).json({
-      error: "Image generation failed",
-      details: err.message
-    });
+    res.status(500).json({ error: "Image generation failed", details: err.message });
   }
 });
 
-// ----------------------------
-// IMAGE EDITING
-// ----------------------------
 app.post("/edit-image", upload.single("image"), async (req, res) => {
   try {
     const { prompt } = req.body;
@@ -83,26 +67,16 @@ app.post("/edit-image", upload.single("image"), async (req, res) => {
             ]
           }
         ],
-        generationConfig: {
-          responseMimeType: "image/png"
-        }
+        generationConfig: { responseMimeType: "image/png" }
       })
     });
 
     const buffer = Buffer.from(await response.arrayBuffer());
-
     res.setHeader("Content-Type", "image/png");
     res.send(buffer);
-
   } catch (err) {
-    res.status(500).json({
-      error: "Image editing failed",
-      details: err.message
-    });
+    res.status(500).json({ error: "Image editing failed", details: err.message });
   }
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
-});
+export default app;
