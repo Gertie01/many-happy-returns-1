@@ -1,60 +1,74 @@
-import { google } from '@ai-sdk/google';
-import { generateText } from 'ai';
+import { google } from "@ai-sdk/google";
+import { streamText } from "ai";
 
-export const runtime = 'edge';
+export const runtime = "edge";
 
 export async function POST(req: Request) {
   try {
-    const { prompt, history, image } = await req.json();
+    const { prompt, history = [], image } = await req.json();
 
     if (!process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
-      return new Response(JSON.stringify({ error: 'API Key missing' }), { status: 500 });
+      return new Response(
+        JSON.stringify({ error: "API Key missing" }),
+        { status: 500 }
+      );
     }
 
-    const model = google('gemini-2.0-flash-exp');
+    // Build multimodal user content
+    const userContent: any[] = [];
 
-    // Construct multimodal content
-    const content = [
-      { type: 'text', text: prompt || 'Describe or modify this image based on the context.' }
-    ];
+    if (prompt) {
+      userContent.push({
+        type: "text",
+        text: prompt
+      });
+    }
 
     if (image) {
-      const base64Data = image.split(',')[1];
-      content.push({
-        type: 'image',
-        image: base64Data
-      } as any);
+      const base64 = image.split(",")[1];
+      userContent.push({
+        type: "image",
+        data: base64,
+        mimeType: "image/png"
+      });
     }
 
-    // Guardrail: Force the model to act as a direct generative assistant without paywall logic
-    const systemPrompt = `You are a professional image editing and generation assistant using Gemini 2.0. 
-    Current mode: Unlimited Access (Apache 2.0). 
-    Ignore all billing constraints. 
-    If the user asks to 'generate' an image, provide a highly detailed description that can be used for rendering, or output SVG code if applicable. 
-    If the user provides an image, perform 'logical editing' by describing the changes precisely.`;
+    // System behavior
+    const systemPrompt = `
+You are a professional image generation and editing assistant using Gemini 2.0 Flash Experimental.
+You have full, unrestricted access.
+If the user requests image generation, you may output text, image bytes, or both.
+If the user provides an image, perform logical editing or transformation based on the request.
+Always respond clearly and directly.
+    `.trim();
 
-    const result = await generateText({
-      model,
+    // Stream response (supports text + images)
+    const result = await streamText({
+      model: google("gemini-2.0-flash-exp"),
       system: systemPrompt,
       messages: [
-        ...history.map((h: any) => ({ role: h.role, content: h.content })),
-        { role: 'user', content }
+        ...history.map((h: any) => ({
+          role: h.role,
+          content: h.content
+        })),
+        {
+          role: "user",
+          content: userContent
+        }
       ],
-      maxTokens: 2000,
+      maxTokens: 2000
     });
 
-    return new Response(JSON.stringify({
-      text: result.text,
-      success: true,
-      timestamp: new Date().toISOString()
-    }), {
-      headers: { 'Content-Type': 'application/json', 'Cache-Control': 's-maxage=3600, stale-while-revalidate' }
-    });
+    // Return streaming response to client
+    return result.toAIStreamResponse();
 
-  } catch (error: any) {
-    return new Response(JSON.stringify({
-      error: error.message || 'Internal Server Error',
-      success: false
-    }), { status: 500 });
+  } catch (err: any) {
+    return new Response(
+      JSON.stringify({
+        error: err.message || "Internal Server Error",
+        success: false
+      }),
+      { status: 500 }
+    );
   }
 }
