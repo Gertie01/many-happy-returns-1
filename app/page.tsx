@@ -1,4 +1,4 @@
-import ChatUI from "./components/ChatUI";
+Remix is Back!
 
 export default function Home() {
   return (
