@@ -1,4 +1,4 @@
-import ImageEditor from '@/components/ImageEditor';
+import ChatUI from "@/components/ChatUI";
 
 export default function Home() {
   return (
@@ -15,8 +15,8 @@ export default function Home() {
             Edge Runtime Active
           </div>
         </header>
-        
-        <ImageEditor />
+
+        <ChatUI />
       </div>
     </main>
   );
