@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server';
 import { google } from "@ai-sdk/google";
 import { streamText } from "ai";
 
@@ -14,18 +15,13 @@ export async function POST(req: Request) {
       );
     }
 
-    // Initialize Google client (AI SDK v3+ syntax)
-    const client = google({
-      apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY
-    });
-
     // Build multimodal user content
     const userContent: any[] = [];
 
     if (prompt) {
       userContent.push({
         type: "text",
-        text: prompt
+        text: prompt,
       });
     }
 
@@ -34,7 +30,7 @@ export async function POST(req: Request) {
       userContent.push({
         type: "image",
         data: base64,
-        mimeType: "image/png"
+        mimeType: "image/png",
       });
     }
 
@@ -46,31 +42,35 @@ If the user provides an image, perform logical editing or transformation.
 Always respond clearly and directly.
     `.trim();
 
-    // Stream response (text + images)
+    // Stream response (TEXT + IMAGE)
     const result = await streamText({
-      model: client("gemini-2.0-flash-exp"),
+      model: google("gemini-2.0-flash-exp"),
+      providerOptions: {
+        google: {
+          responseModalities: ["TEXT", "IMAGE"],
+        },
+      },
       system: systemPrompt,
       messages: [
         ...history.map((h: any) => ({
           role: h.role,
-          content: h.content
+          content: h.content,
         })),
         {
           role: "user",
-          content: userContent
-        }
+          content: userContent,
+        },
       ],
-      maxTokens: 2000
+      maxTokens: 2000,
     });
 
-    // AI SDK v3+ uses toDataStreamResponse()
     return result.toDataStreamResponse();
 
   } catch (err: any) {
     return new Response(
       JSON.stringify({
         error: err.message || "Internal Server Error",
-        success: false
+        success: false,
       }),
       { status: 500 }
     );
