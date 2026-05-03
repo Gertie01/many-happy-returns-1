@@ -64,7 +64,7 @@ Always respond clearly and directly.
       maxOutputTokens: 2000,
     });
 
-    return result.toDataStreamResponse();
+    return result.toTextStreamResponse();
 
   } catch (err: any) {
     return new Response(
