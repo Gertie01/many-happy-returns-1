@@ -14,6 +14,11 @@ export async function POST(req: Request) {
       );
     }
 
+    // Initialize Google client (AI SDK v3+ syntax)
+    const client = google({
+      apiKey: process.env.GOOGLE_GENERATIVE_AI_API_KEY
+    });
+
     // Build multimodal user content
     const userContent: any[] = [];
 
@@ -36,15 +41,14 @@ export async function POST(req: Request) {
     // System behavior
     const systemPrompt = `
 You are a professional image generation and editing assistant using Gemini 2.0 Flash Experimental.
-You have full, unrestricted access.
-If the user requests image generation, you may output text, image bytes, or both.
-If the user provides an image, perform logical editing or transformation based on the request.
+You may output text, image bytes, or both.
+If the user provides an image, perform logical editing or transformation.
 Always respond clearly and directly.
     `.trim();
 
-    // Stream response (supports text + images)
+    // Stream response (text + images)
     const result = await streamText({
-      model: google("gemini-2.0-flash-exp"),
+      model: client("gemini-2.0-flash-exp"),
       system: systemPrompt,
       messages: [
         ...history.map((h: any) => ({
@@ -59,8 +63,8 @@ Always respond clearly and directly.
       maxTokens: 2000
     });
 
-    // Return streaming response to client
-    return result.toAIStreamResponse();
+    // AI SDK v3+ uses toDataStreamResponse()
+    return result.toDataStreamResponse();
 
   } catch (err: any) {
     return new Response(
