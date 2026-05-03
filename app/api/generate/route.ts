@@ -7,6 +7,7 @@ export async function POST(req: Request) {
   try {
     const { prompt, history = [], image } = await req.json();
 
+    // Build multimodal user content
     const userContent: any[] = [];
 
     if (prompt) {
@@ -29,6 +30,7 @@ If the user provides an image, perform logical editing or transformation.
 Always respond clearly and directly.
     `.trim();
 
+    // Run the model
     const result = await streamText({
       model: google("gemini-2.0-flash-exp"),
       providerOptions: {
@@ -44,20 +46,21 @@ Always respond clearly and directly.
       maxOutputTokens: 2000,
     });
 
-    // IMPORTANT: result.files is a Promise — must await it
-    const resolvedFiles = await result.files;
-
-    const images = resolvedFiles
+    // Extract images (but do NOT stream them)
+    const images = result.files
       .filter((f) => f.mimeType.startsWith("image/"))
       .map((f) => ({
         mimeType: f.mimeType,
         data: f.data,
       }));
 
-    // Stream text, then send images after completion
+    // Create a combined response: text stream + final JSON
     return result.toTextStreamResponse({
+      // This runs AFTER the text stream finishes
       async onCompletion() {
-        return { images };
+        return {
+          images,
+        };
       },
     });
 
