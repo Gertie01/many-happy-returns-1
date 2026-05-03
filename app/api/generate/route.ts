@@ -61,7 +61,7 @@ Always respond clearly and directly.
           content: userContent,
         },
       ],
-      maxTokens: 2000,
+      maxOutputTokens: 2000,
     });
 
     return result.toDataStreamResponse();
