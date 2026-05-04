@@ -46,6 +46,7 @@ Always respond clearly and directly.
 
  // Await the files
 const resolvedFiles = await result.files;
+console.log("FILES:", resolvedFiles);    
 
 // Convert Gemini file objects into usable images
 const images = resolvedFiles
