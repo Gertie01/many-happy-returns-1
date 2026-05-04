@@ -1,52 +1,64 @@
-"use client";
-
-import { useState } from "react";
+import { useState, useCallback } from "react";
 
 export function useGenerate() {
-  const [loading, setLoading] = useState(false);
-  const [streamedText, setStreamedText] = useState("");
-  const [images, setImages] = useState([]);
+  const [messages, setMessages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
 
-  async function generate({ prompt, image = null, history = [] }) {
-    setLoading(true);
-    setStreamedText("");
-    setImages([]);
+  const generate = useCallback(async ({ prompt, image, history }) => {
+    setIsLoading(true);
 
-    const response = await fetch("/api/generate", {
-      method: "POST",
-      body: JSON.stringify({ prompt, image, history }),
-    });
+    try {
+      const res = await fetch("/api/generate", {
+        method: "POST",
+        body: JSON.stringify({ prompt, image, history }),
+      });
 
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-
-      const chunk = decoder.decode(value, { stream: true });
-
-      // Parse SSE-style events
-      const lines = chunk.split("\n");
-      for (const line of lines) {
-        if (line.startsWith("data:")) {
-          const json = JSON.parse(line.replace("data:", "").trim());
-
-          // Streamed text
-          if (json.type === "text-delta") {
-            setStreamedText((t) => t + json.text);
-          }
-
-          // Final images
-          if (json.type === "completion") {
-            setImages(json.data.images || []);
-          }
-        }
+      if (!res.ok) {
+        throw new Error("Failed to generate response");
       }
+
+      // Stream text response
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let text = "";
+
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        text += decoder.decode(value, { stream: true });
+      }
+
+      // Parse final JSON block containing images
+      const lastJsonStart = text.lastIndexOf("{");
+      const json = JSON.parse(text.slice(lastJsonStart));
+
+      const images = json.images?.map((img) => ({
+        mimeType: img.mimeType,
+        dataUrl: `data:${img.mimeType};base64,${img.data}`,
+      })) || [];
+
+      // Add message to UI
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          text,
+          images,
+        },
+      ]);
+
+      return { text, images };
+    } catch (err) {
+      console.error("Generation error:", err);
+      throw err;
+    } finally {
+      setIsLoading(false);
     }
+  }, []);
 
-    setLoading(false);
-  }
-
-  return { generate, loading, streamedText, images };
+  return {
+    messages,
+    isLoading,
+    generate,
+  };
 }
