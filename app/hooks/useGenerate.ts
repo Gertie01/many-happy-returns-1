@@ -1,24 +1,24 @@
+"use client";
+
 import { useState } from "react";
 
 export function useGenerate() {
+  const [loading, setLoading] = useState(false);
   const [streamedText, setStreamedText] = useState("");
   const [images, setImages] = useState([]);
-  const [loading, setLoading] = useState(false);
 
-  async function generate({ prompt, image }) {
+  async function generate({ prompt, image = null, history = [] }) {
+    setLoading(true);
     setStreamedText("");
     setImages([]);
-    setLoading(true);
 
     const response = await fetch("/api/generate", {
       method: "POST",
-      body: JSON.stringify({ prompt, image }),
+      body: JSON.stringify({ prompt, image, history }),
     });
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
-
-    let buffer = "";
 
     while (true) {
       const { value, done } = await reader.read();
@@ -26,24 +26,27 @@ export function useGenerate() {
 
       const chunk = decoder.decode(value, { stream: true });
 
-      setStreamedText((prev) => prev + chunk);
-      buffer += chunk;
-    }
+      // Parse SSE-style events
+      const lines = chunk.split("\n");
+      for (const line of lines) {
+        if (line.startsWith("data:")) {
+          const json = JSON.parse(line.replace("data:", "").trim());
 
-    try {
-      const jsonStart = buffer.lastIndexOf("{");
-      const jsonString = buffer.slice(jsonStart);
-      const finalPayload = JSON.parse(jsonString);
+          // Streamed text
+          if (json.type === "text-delta") {
+            setStreamedText((t) => t + json.text);
+          }
 
-      if (finalPayload.images) {
-        setImages(finalPayload.images);
+          // Final images
+          if (json.type === "completion") {
+            setImages(json.data.images || []);
+          }
+        }
       }
-    } catch (err) {
-      console.warn("No final JSON payload found", err);
     }
 
     setLoading(false);
   }
 
-  return { streamedText, images, loading, generate };
+  return { generate, loading, streamedText, images };
 }
