@@ -46,28 +46,25 @@ Always respond clearly and directly.
       maxOutputTokens: 2000,
     });
 
- // Await the files
+// Await the files
 const resolvedFiles = await result.files;
-console.log("FILES:", resolvedFiles);    
+console.log("FILES:", resolvedFiles);
 
 // Convert Gemini file objects into usable images
 const images = resolvedFiles
-  .filter((f) => f.uri?.startsWith("data:image/"))
+  .filter((f) => f.inlineData?.mimeType?.startsWith("image/"))
   .map((f) => {
-    const [header, base64] = f.uri.split(",");
-    const mimeType = header.replace("data:", "").replace(";base64", "");
-
     return {
-      mimeType,
-      data: base64,
+      mimeType: f.inlineData.mimeType,
+      data: f.inlineData.data,
     };
   });
 
-    return result.toTextStreamResponse({
-      async onCompletion() {
-        return { images };
-      },
-    });
+return result.toTextStreamResponse({
+  async onCompletion() {
+    return { images };
+  },
+});
 
   } catch (err: any) {
     return new Response(
