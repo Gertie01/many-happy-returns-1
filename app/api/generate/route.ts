@@ -29,6 +29,8 @@ If the user provides an image, perform logical editing or transformation.
 Always respond clearly and directly.
     `.trim();
 
+    console.log("API KEY:", process.env.GOOGLE_GENERATIVE_AI_API_KEY);
+
     const result = await streamText({
       model: google("gemini-2.0-flash-exp"),
       providerOptions: {
