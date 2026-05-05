@@ -29,8 +29,6 @@ If the user provides an image, perform logical editing or transformation.
 Always respond clearly and directly.
     `.trim();
 
-    console.log("API KEY:", process.env.GOOGLE_GENERATIVE_AI_API_KEY);
-
     const result = await streamText({
       model: google("gemini-2.0-flash-exp"),
       providerOptions: {
@@ -39,54 +37,64 @@ Always respond clearly and directly.
         },
       },
       system: systemPrompt,
-      messages: [
-        ...history,
-        { role: "user", content: userContent },
-      ],
+      messages: [...history, { role: "user", content: userContent }],
       maxOutputTokens: 2000,
     });
 
-// Await the files
-const resolvedFiles = await result.files;
-console.log("FILES:", resolvedFiles);
+    // Resolve files
+    const resolvedFiles = await result.files;
 
-// Convert Gemini file objects into usable images (type‑safe)
-const images = resolvedFiles
-  .map((f: any) => {
-    // CASE 1: Gemini 2.0 inlineData
-    if (f.inlineData?.data && f.inlineData?.mimeType) {
-      return {
-        mimeType: f.inlineData.mimeType,
-        data: f.inlineData.data,
-      };
-    }
+    // Normalize all possible Gemini file formats
+    const images = resolvedFiles
+      .map((f: any) => {
+        // inlineData (Gemini 2.0)
+        if (f.inlineData?.data && f.inlineData?.mimeType) {
+          return {
+            mimeType: f.inlineData.mimeType,
+            data: f.inlineData.data,
+          };
+        }
 
-    // CASE 2: fileUri (data:image/... base64)
-    if (typeof f.fileUri === "string" && f.fileUri.startsWith("data:image/")) {
-      const [header, base64] = f.fileUri.split(",");
-      const mimeType = header.replace("data:", "").replace(";base64", "");
-      return { mimeType, data: base64 };
-    }
+        // fileUri (data:image/... base64)
+        if (typeof f.fileUri === "string" && f.fileUri.startsWith("data:image/")) {
+          const [header, base64] = f.fileUri.split(",");
+          const mimeType = header.replace("data:", "").replace(";base64", "");
+          return { mimeType, data: base64 };
+        }
 
-    // CASE 3: direct fields (some ai-sdk versions)
-    if (f.data && f.mimeType?.startsWith("image/")) {
-      return {
-        mimeType: f.mimeType,
-        data: f.data,
-      };
-    }
+        // direct fields (some ai-sdk versions)
+        if (f.data && f.mimeType?.startsWith("image/")) {
+          return {
+            mimeType: f.mimeType,
+            data: f.data,
+          };
+        }
 
-    return null;
-  })
-  .filter(Boolean);
+        return null;
+      })
+      .filter(Boolean);
 
+    // Merge streamed text + final JSON
+    const { readable, writable } = new TransformStream();
+    const writer = writable.getWriter();
 
-return result.toTextStreamResponse({
-  async onCompletion() {
-    return { images };
-  },
-});
+    result.toTextStream().pipeTo(
+      new WritableStream({
+        write(chunk) {
+          writer.write(chunk);
+        },
+        async close() {
+          writer.write("\n" + JSON.stringify({ images }));
+          writer.close();
+        },
+      })
+    );
 
+    return new Response(readable, {
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+      },
+    });
   } catch (err: any) {
     return new Response(
       JSON.stringify({
