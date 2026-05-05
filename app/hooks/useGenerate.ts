@@ -20,22 +20,27 @@ export function useGenerate() {
       // Stream text response
       const reader = res.body.getReader();
       const decoder = new TextDecoder();
-      let text = "";
+      let fullStream = "";
 
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
-        text += decoder.decode(value, { stream: true });
+        fullStream += decoder.decode(value, { stream: true });
       }
 
-      // Parse final JSON block containing images
-      const lastJsonStart = text.lastIndexOf("{");
-      const json = JSON.parse(text.slice(lastJsonStart));
+      // Extract final JSON block
+      const jsonStart = fullStream.lastIndexOf("{");
+      const json = JSON.parse(fullStream.slice(jsonStart));
 
-      const images = json.images?.map((img) => ({
-        mimeType: img.mimeType,
-        dataUrl: `data:${img.mimeType};base64,${img.data}`,
-      })) || [];
+      // Extract pure text (everything before JSON)
+      const text = fullStream.slice(0, jsonStart).trim();
+
+      // Convert images into usable data URLs
+      const images =
+        json.images?.map((img) => ({
+          mimeType: img.mimeType,
+          dataUrl: `data:${img.mimeType};base64,${img.data}`,
+        })) || [];
 
       // Add message to UI
       setMessages((prev) => [
