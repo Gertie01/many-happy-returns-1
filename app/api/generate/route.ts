@@ -50,15 +50,36 @@ Always respond clearly and directly.
 const resolvedFiles = await result.files;
 console.log("FILES:", resolvedFiles);
 
-// Convert Gemini file objects into usable images
+// Convert Gemini file objects into usable images (type‑safe)
 const images = resolvedFiles
-  .filter((f) => f.inlineData?.mimeType?.startsWith("image/"))
-  .map((f) => {
-    return {
-      mimeType: f.inlineData.mimeType,
-      data: f.inlineData.data,
-    };
-  });
+  .map((f: any) => {
+    // CASE 1: Gemini 2.0 inlineData
+    if (f.inlineData?.data && f.inlineData?.mimeType) {
+      return {
+        mimeType: f.inlineData.mimeType,
+        data: f.inlineData.data,
+      };
+    }
+
+    // CASE 2: fileUri (data:image/... base64)
+    if (typeof f.fileUri === "string" && f.fileUri.startsWith("data:image/")) {
+      const [header, base64] = f.fileUri.split(",");
+      const mimeType = header.replace("data:", "").replace(";base64", "");
+      return { mimeType, data: base64 };
+    }
+
+    // CASE 3: direct fields (some ai-sdk versions)
+    if (f.data && f.mimeType?.startsWith("image/")) {
+      return {
+        mimeType: f.mimeType,
+        data: f.data,
+      };
+    }
+
+    return null;
+  })
+  .filter(Boolean);
+
 
 return result.toTextStreamResponse({
   async onCompletion() {
