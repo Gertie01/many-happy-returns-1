@@ -78,7 +78,7 @@ Always respond clearly and directly.
     const { readable, writable } = new TransformStream();
     const writer = writable.getWriter();
 
-    result.toTextStream().pipeTo(
+    result.textStream.pipeTo(
       new WritableStream({
         write(chunk) {
           writer.write(chunk);
